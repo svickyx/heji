@@ -1,0 +1,297 @@
+openapi: '3.0.2'
+info:
+  title: HOGI API
+  version: '1.0'
+servers:
+  - url: https://localhost:5001/api
+
+components:
+  schemas:
+    user:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      example:
+        {
+          email: signup@gmail.com,
+          password: yourpassword
+        }
+
+    projectInfo:
+      type: object
+      properties:
+        projectId:
+          type: string
+        projectName:
+          type: string
+        customer:
+          type: string
+        designer:
+          type: string
+        projectScheduledStartDate:
+          type: string
+        projectScheduledDueDate:
+          type: string
+        scheduledWorkDays:
+          type: integer
+        actualProgress:
+          type: number
+
+    m.projectInfo:
+      type: object
+      properties:
+        projectId:
+          type: string
+        projectName:
+          type: string
+        customer:
+          type: string
+        actualProgress:
+          type: number
+        scheduledProgress:
+          type: number
+
+paths:
+  /signup:
+    post:
+      summary: 註冊
+      description: 註冊⼀個新帳號(email OR google account)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/user'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    example: userId
+
+  /signin:
+    post:
+      summary: 登入
+      description: 登入帳號
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/user'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  authenticationToken:
+                    type: string
+                  googleAuthenticationToken:
+                    type: string
+                  vertified:
+                    type: string
+
+  /user/{userId}/data:
+    post:
+      summary: 填寫個人資料
+      description: ⽤email或者Google 帳號註冊之後，要填寫全名，部⾨和職位，然後等待管理員審核，管理員確定⽤⼾可以使⽤後，才可以使⽤
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    displayName:
+                      type: string
+                    department:
+                      type: string
+                    jobTitle:
+                      type: string
+              example:
+                data: {
+                  displayName: 趙靜,
+                  department: 部⾨A,
+                  jobTitle: ⼯程師
+                }
+      responses:
+        200: 
+          description: OK
+
+  /account/password:
+    put:
+      summary: 登入時忘記密碼 (Unauthenticated users）
+      description: 忘記密碼，輸入註冊時使⽤的郵箱，會收到⼀封郵件，點開裡⾯的link,會跳到更新密碼的⾴⾯
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              example:
+                email: signup@gmail.com 
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  token:
+                    type: string
+
+  /account/password_reset:
+    put:
+      summary: 更新密碼
+      description: ⽤⼾輸入新密碼，和被隱藏的token⼀起送出
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+              example:
+                {
+                  token: '1234345',
+                  password: a new password
+                }
+      responses:
+        200:
+          description: OK
+
+  /projects:
+    get:
+      summary: 專案列表
+      description: 顯⽰該⽤⼾有權限看到的專案信息，default按照核定開⼯⽇⽇期由新到舊排列
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: object
+                    properties:
+                      projectInProgress:
+                        type: array
+                        items:
+                          type: object
+                          $ref: '#/components/schemas/projectInfo'
+                        example:
+                          [{
+                            projectId: '1',
+                            projectName: 110年湖畔裝修工程,
+                            customer: "圖書館",
+                            designer: "律師事務所",
+                            projectScheduledStartDate: 2021/10/01,
+                            projectScheduledDueDate: 2021/12/01,
+                            scheduledWorkDays: 60,
+                            actualProgress: 0.42
+                          }]
+                      projectComplete:
+                        type: array
+                        items:
+                          type: object
+                          $ref: '#/components/schemas/projectInfo'
+                        example:
+                          [{
+                            projectId: '2',
+                            projectName: 110年湖畔裝修工程,
+                            customer: "圖書館",
+                            designer: "律師事務所",
+                            projectScheduledStartDate: 2021/10/01,
+                            projectScheduledDueDate: 2021/12/01,
+                            scheduledWorkDays: 60,
+                            actualProgress: 1
+                          }]
+
+  /m.projects:
+    get:
+      summary: 專案列表
+      description: Mobile版⾯顯⽰的信息比較少，default排序還是以核定開⼯⽇⽇期由新到舊排列
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project-Mobile:
+                    type: object
+                    properties:
+                      projectInProgress:
+                        type: array
+                        items:
+                          type: object
+                          $ref: '#/components/schemas/m.projectInfo'
+                        example:
+                          [{
+                            projectId: '1',
+                            projectName: 110年湖畔裝修工程,
+                            customer: "圖書館",
+                            actualProgress: 0.42,
+                            scheduledProgress: 0.5
+                          }]
+                      projectComplete:
+                        type: array
+                        items:
+                          type: object
+                          $ref: '#/components/schemas/m.projectInfo'
+                        example:
+                          [{
+                            projectId: '2',
+                            projectName: 110年湖畔裝修工程,
+                            customer: "圖書館",
+                            actualProgress: 1,
+                            scheduledProgress: 0.5
+                          }]
+
+  /projects/{projectId}:
+    post:
+      summary: 上傳專案
+      description: 上傳⼀個excel檔案，在確定是對的檔案之後，點擊創建專案btn，在下⼀⾴裡顯⽰excel裡⾯的data
+      parameters:
+        - name: projectId
+          in: path
+          description: Project ID
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
